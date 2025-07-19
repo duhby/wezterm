@@ -351,35 +351,23 @@ impl super::TermWindow {
 
     #[allow(clippy::float_cmp)]
     pub fn scaling_changed(&mut self, dimensions: Dimensions, font_scale: f64, window: &Window) {
-        fn dpi_adjusted(n: usize, dpi: usize) -> f32 {
-            n as f32 / dpi as f32
-        }
-
         /// On Windows, scaling changes may adjust the pixel geometry by a few pixels,
         /// so this function checks if we're in a close-enough ballpark.
-        fn close_enough(a: f32, b: f32) -> bool {
-            let diff = (a - b).abs();
-            diff < 10.
+        fn close_enough_ratio(a: f32, b: f32) -> bool {
+            let ratio = a / b;
+            ratio > 0.95 && ratio < 1.05 // +-5%
         }
+
+        let logical_old_height = self.dimensions.pixel_height as f32 * dimensions.dpi as f32 / self.dimensions.dpi as f32;
+        let logical_old_width  = self.dimensions.pixel_width as f32 * dimensions.dpi as f32 / self.dimensions.dpi as f32;
 
         // Distinguish between eg: dpi being detected as double the initial dpi (where
         // the pixel dimensions don't change), and the dpi change being detected, but
         // where the window manager also decides to tile/resize the window.
         // In the latter case, we don't want to preserve the terminal rows/cols.
         let simple_dpi_change = dimensions.dpi != self.dimensions.dpi
-            && ((close_enough(
-                dpi_adjusted(dimensions.pixel_height, dimensions.dpi),
-                dpi_adjusted(self.dimensions.pixel_height, self.dimensions.dpi),
-            ) && close_enough(
-                dpi_adjusted(dimensions.pixel_width, dimensions.dpi),
-                dpi_adjusted(self.dimensions.pixel_width, self.dimensions.dpi),
-            )) || (close_enough(
-                dimensions.pixel_width as f32,
-                self.dimensions.pixel_width as f32,
-            ) && close_enough(
-                dimensions.pixel_height as f32,
-                self.dimensions.pixel_height as f32,
-            )));
+            && close_enough_ratio(dimensions.pixel_height as f32, logical_old_height)
+            && close_enough_ratio(dimensions.pixel_width as f32, logical_old_width);
 
         if simple_dpi_change && cfg!(target_os = "macos") {
             // Spooky action at a distance: on macOS, NSWindow::isZoomed can falsely
