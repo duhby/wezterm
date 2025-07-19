@@ -100,7 +100,7 @@
           inherit buildInputs nativeBuildInputs;
 
           name = "wezterm";
-          src = ./;
+          src = ./.;
           version = self.shortRev or "dev";
 
           cargoLock = {
