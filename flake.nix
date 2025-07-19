@@ -100,11 +100,11 @@
           inherit buildInputs nativeBuildInputs;
 
           name = "wezterm";
-          src = ./..;
+          src = ./;
           version = self.shortRev or "dev";
 
           cargoLock = {
-            lockFile = ../Cargo.lock;
+            lockFile = ./Cargo.lock;
             allowBuiltinFetchGit = true;
           };
 
